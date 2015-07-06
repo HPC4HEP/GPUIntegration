@@ -1,4 +1,4 @@
-/// Goal: no boilerplate
+/// Concurrent version
 #include <cstdio>
 #include <cmath>
 #include <thread>
@@ -6,22 +6,6 @@
 #include "matOps_kernels.cu"
 
 #define PI 3.14159265
-
-void cudaBoilerplate(int m, int n, float *A, float *B, float *C){
-	float *dA, *dB, *dC;
-	cudaMalloc((void **) &dA, m*n*sizeof(float));
-	cudaMalloc((void **) &dB, m*n*sizeof(float));
-	cudaMalloc((void **) &dC, m*n*sizeof(float));
-	cudaMemcpy(dA, A, m*n*sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(dB, B, m*n*sizeof(float), cudaMemcpyHostToDevice);
-	dim3 grid((n-1)/BLOCK_SIZE+1, (m-1)/BLOCK_SIZE+1, 1);
-	dim3 block(BLOCK_SIZE, BLOCK_SIZE, 1);
-	matAdd_kernel<<<grid,block>>>(m, n, dA, dB, dC);
-	//(m==n)? matMul_kernel<<<grid,block>>>(m, n, dA, dB, dC): exit(1);
-
-	cudaMemcpy(C, dC, m*n*sizeof(float), cudaMemcpyDeviceToHost);
-	cudaFree(dA); cudaFree(dB); cudaFree(dC);
-}
 
 int main()
 {
@@ -37,12 +21,22 @@ int main()
 
 
 
-	/*std::packaged_task<void()> task([](){
-		kernel_run(matAdd_kernel, grid, m, n, dA, dB, dC);
-	});*/
-	std::packaged_task<void(int, int, float*, float*, float*)> task(cudaBoilerplate);
+	std::packaged_task<void()> task([&]{
+		float *dA, *dB, *dC;
+		cudaMalloc((void **) &dA, m*n*sizeof(float));
+		cudaMalloc((void **) &dB, m*n*sizeof(float));
+		cudaMalloc((void **) &dC, m*n*sizeof(float));
+		cudaMemcpy(dA, A, m*n*sizeof(float), cudaMemcpyHostToDevice);
+		cudaMemcpy(dB, B, m*n*sizeof(float), cudaMemcpyHostToDevice);
+		dim3 grid((n-1)/BLOCK_SIZE+1, (m-1)/BLOCK_SIZE+1, 1);
+		dim3 block(BLOCK_SIZE, BLOCK_SIZE, 1);
+		matAdd_kernel<<<grid,block>>>(m, n, dA, dB, dC);
+		//(m==n)? matMul_kernel<<<grid,block>>>(m, n, dA, dB, dC): exit(1);
+		cudaMemcpy(C, dC, m*n*sizeof(float), cudaMemcpyDeviceToHost);
+		cudaFree(dA); cudaFree(dB); cudaFree(dC);
+	});
   std::future<void> futureKernel = task.get_future();  
-  std::thread(std::move(task), m,n,A,B,C).detach();
+  std::thread(std::move(task)).detach();
 
 
 

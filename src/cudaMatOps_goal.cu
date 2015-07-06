@@ -20,13 +20,11 @@ int main()
 		A[i]= 10*sin(PI/100*i), B[i]= sin(PI/100*i+PI/6)*sin(PI/100*i+PI/6);
 
 
-
-	std::packaged_task<void(???)> task([](){
+	std::packaged_task<void()> task([&](){
 		kernel_run(matAdd_kernel, grid, m, n, dA, dB, dC);
 	});
   std::future<void> futureKernel = task.get_future();  
-  std::thread(std::move(task), ???).detach();
-
+  std::thread(std::move(task)).detach();
 
 
 	//Output
