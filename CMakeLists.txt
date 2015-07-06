@@ -7,8 +7,8 @@ INCLUDE(FindCUDA)
 
 #INCLUDE_DIRECTORIES(/usr/local/cuda/include)
 
-LIST(APPEND CMAKE_CXX_FLAGS "-std=c++11 -O3 -ffast-math")
-LIST(APPEND CUDA_NVCC_FLAGS --compiler-options -fno-strict-aliasing -lineinfo -use_fast_math -Xptxas -dlcm=cg)
+LIST(APPEND CMAKE_CXX_FLAGS "-std=c++11 -O2 ")
+LIST(APPEND CUDA_NVCC_FLAGS --compiler-options -fno-strict-aliasing -lineinfo -Xptxas -dlcm=cg)
 # LIST(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_20,code=sm_20)
 # LIST(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_30,code=sm_30)
 LIST(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_35,code=sm_35)
