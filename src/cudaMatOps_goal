@@ -7,6 +7,22 @@
 
 #define PI 3.14159265
 
+void rand_init(float *A, float *B, int size)
+{
+	for (int i=0; i<size; i++)
+		A[i]= 10*sin(PI/100*i), B[i]= sin(PI/100*i+PI/6)*sin(PI/100*i+PI/6);
+}
+
+void show(float *mat, int m, int n)
+{
+	for (int y = 0; y < m; y++){
+		for (int x = 0; x < n; x++){
+			printf("%.2f\t",y,x, mat[y*n+x]);
+		}
+		printf("\n");
+	}
+}
+
 int main()
 {
 	float *A, *B, *C;
@@ -16,42 +32,28 @@ int main()
 	// Simple testcase
 	m= 10; n= m;
 	A= new float[m*n], B= new float[m*n], C= new float[m*n];
-	for (int i=0; i<m*n; i++)
-		A[i]= 10*sin(PI/100*i), B[i]= sin(PI/100*i+PI/6)*sin(PI/100*i+PI/6);
+	rand_init(A, B, m*n);
 
 
-	std::packaged_task<void()> task([&](){
+
+	std::packaged_task<void()> task([&]{
 		kernel_run(matAdd_kernel, grid, m, n, dA, dB, dC);
 	});
   std::future<void> futureKernel = task.get_future();  
   std::thread(std::move(task)).detach();
 
 
+
 	//Output
 	printf("A:\n");
-	for (int y = 0; y < m; y++){
-		for (int x = 0; x < n; x++){
-			printf("%.2f\t",y,x, A[y*n+x]);
-		}
-		printf("\n");
-	}
+	show(A, m,n);
 	printf("\nB:\n");
-	for (int y = 0; y < m; y++){
-		for (int x = 0; x < n; x++){
-			printf("%.2f\t",y,x, B[y*n+x]);
-		}
-		printf("\n");
-	}
+	show(B, m,n);
 
 	// Wait for kernel to complete and show result
   futureKernel.get();
 	printf("\nC:\n");
-	for (int y = 0; y < m; y++){
-		for (int x = 0; x < n; x++){
-			printf("%.2f\t",y,x, C[y*n+x]);
-		}
-		printf("\n");
-	}
+	show(C, m,n);
 	free(A); free(B); free(C);
 	return 0;
 }

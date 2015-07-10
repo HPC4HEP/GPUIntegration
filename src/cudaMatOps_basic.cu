@@ -27,7 +27,7 @@ int main()
 	dim3 grid((n-1)/BLOCK_SIZE+1, (m-1)/BLOCK_SIZE+1, 1);
 	dim3 block(BLOCK_SIZE, BLOCK_SIZE, 1);
 	matAdd_kernel<<<grid,block>>>(m, n, dA, dB, dC);
-	//(m==n)? matMul_kernel<<<grid,block>>>(m, n, dA, dB, dC): exit(1);
+	//(m==n)? matMul_kernel<<<grid,block>>>(m,m,m, dA, dB, dC): exit(1);
 
 	cudaMemcpy(C, dC, m*n*sizeof(float), cudaMemcpyDeviceToHost);
 	cudaFree(dA); cudaFree(dB); cudaFree(dC);

@@ -3,16 +3,19 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 PROJECT(GPUIntegration)
 
 FIND_PACKAGE(CUDA REQUIRED)
-INCLUDE(FindCUDA)
 
-LIST(APPEND CMAKE_CXX_FLAGS "-std=c++11 -O2 ")
-LIST(APPEND CUDA_NVCC_FLAGS --compiler-options -fno-strict-aliasing -lineinfo -Xptxas -dlcm=cg)
-# LIST(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_20,code=sm_20)
-# LIST(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_30,code=sm_30)
-LIST(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_35,code=sm_35)
+LIST(APPEND CMAKE_CXX_FLAGS "-std=c++11 -O3")
+LIST(APPEND CUDA_NVCC_FLAGS
+	"-ccbin $ENV{CXX} --compiler-options -fno-strict-aliasing -lineinfo -Xptxas -dlcm=cg")
+LIST(APPEND CUDA_NVCC_FLAGS "-gencode arch=compute_35,code=sm_35")
 
-CUDA_ADD_EXECUTABLE(cudaMatOps src/cudaMatOps.cu)
+CUDA_ADD_EXECUTABLE(cudaMatOpsBasic src/cudaMatOps_basic.cu)
 CUDA_ADD_EXECUTABLE(cudaMatOpsConcurrent src/cudaMatOps_concurrent.cu)
+
+############ HEMI ############
+INCLUDE_DIRECTORIES(../hemi)
+CUDA_ADD_EXECUTABLE(cudaMatOpsHEMI src/cudaMatOps_hemi.cu)
+#SET_TARGET_PROPERTIES(cudaMatOpsHEMI PROPERTIES COMPILE_FLAGS -I../hemi )
 
 ############		Probably unnecessary		#############
 #INCLUDE_DIRECTORIES(/usr/local/cuda/include)

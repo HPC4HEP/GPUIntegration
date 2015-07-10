@@ -1,73 +1,59 @@
 #define BLOCK_SIZE 32
 
-__global__ void matAdd_kernel(int m, int n, float* A, float* B, float* C)
+__global__ void matAdd_kernel(int m, int n, const float* A, const float* B, float* C)
 {
 	int x= blockIdx.x*blockDim.x + threadIdx.x;
 	int y= blockIdx.y*blockDim.y + threadIdx.y;
 
-	if (x<n && y<m)
+  // ### Difference between manual and automatic kernel grid:
+	//if (x<n && y<m)
+  if (y*n+x < n*m)
 		C[y*n+x]= A[y*n+x]+B[y*n+x];
 }
 
-__global__ void matMul_kernel(int wA, int wB, float *A, float *B, float *C)
+#define CRows ARows
+#define CCols BCols
+#define BRows ACols
+__global__ void matMul_shared_kernel(int ARows, int ACols, int BCols,
+                              const float* A, const float* B, float* C)
 {
-  // Block index
-  int bx = blockIdx.x;
-  int by = blockIdx.y;
-  // Thread index
-  int tx = threadIdx.x;
-  int ty = threadIdx.y;
+  float CValue = 0; 
+  int Row = blockIdx.y*BLOCK_SIZE + threadIdx.y;
+  int Col = blockIdx.x*BLOCK_SIZE + threadIdx.x;
+  __shared__ float As[BLOCK_SIZE][BLOCK_SIZE];
+  __shared__ float Bs[BLOCK_SIZE][BLOCK_SIZE];
+  for (int k = 0; k < (BLOCK_SIZE + ACols - 1)/BLOCK_SIZE; k++) {
+    if (k*BLOCK_SIZE + threadIdx.x < ACols && Row < ARows)
+      As[threadIdx.y][threadIdx.x] = A[Row*ACols + k*BLOCK_SIZE + threadIdx.x];
+    else
+      As[threadIdx.y][threadIdx.x] = 0.0;
 
-  // Index of the first sub-matrix of A processed by the block
-  int aBegin = wA * BLOCK_SIZE * by;
-  // Index of the last sub-matrix of A processed by the block
-  int aEnd   = aBegin + wA - 1;
-  // Step size used to iterate through the sub-matrices of A
-  int aStep  = BLOCK_SIZE;
-  // Index of the first sub-matrix of B processed by the block
-  int bBegin = BLOCK_SIZE * bx;
-  // Step size used to iterate through the sub-matrices of B
-  int bStep  = BLOCK_SIZE * wB;
-  // Csub is used to store the element of the block sub-matrix
-  // that is computed by the thread
-  float Csub = 0;
+    if (k*BLOCK_SIZE + threadIdx.y < BRows && Col < BCols)
+      Bs[threadIdx.y][threadIdx.x] = B[(k*BLOCK_SIZE + threadIdx.y)*BCols + Col];
+    else
+      Bs[threadIdx.y][threadIdx.x] = 0.0;
 
-  // Loop over all the sub-matrices of A and B
-  // required to compute the block sub-matrix
-  for (int a = aBegin, b = bBegin; a <= aEnd; a += aStep, b += bStep)
-  {
-    // Declaration of the shared memory array As used to
-    // store the sub-matrix of A
-    __shared__ float As[BLOCK_SIZE][BLOCK_SIZE];
-
-    // Declaration of the shared memory array Bs used to
-    // store the sub-matrix of B
-    __shared__ float Bs[BLOCK_SIZE][BLOCK_SIZE];
-
-    // Load the matrices from device memory
-    // to shared memory; each thread loads
-    // one element of each matrix
-    As[ty][tx] = A[a + wA * ty + tx];
-    Bs[ty][tx] = B[b + wB * ty + tx];
-
-    // Synchronize to make sure the matrices are loaded
     __syncthreads();
+    for (int n = 0; n < BLOCK_SIZE; ++n)
+      CValue += As[threadIdx.y][n] * Bs[n][threadIdx.x];
 
-    // Multiply the two matrices together;
-    // each thread computes one element
-    // of the block sub-matrix
-#pragma unroll
-    for (int k = 0; k < BLOCK_SIZE; ++k)
-    	Csub += As[ty][k] * Bs[k][tx];
-
-    // Synchronize to make sure that the preceding
-    // computation is done before loading two new
-    // sub-matrices of A and B in the next iteration
     __syncthreads();
   }
+  if (Row < CRows && Col < CCols)
+    C[(blockIdx.y * blockDim.y + threadIdx.y)*CCols+blockIdx.x*blockDim.x+threadIdx.x]= CValue;
+}
 
-  // Write the block sub-matrix to device memory;
-  // each thread writes one element
-  int c = wB * BLOCK_SIZE * by + BLOCK_SIZE * bx;
-  C[c + wB * ty + tx] = Csub;
+__global__ void matMul_kernel(int ARows, int ACols, int BCols,
+                              const float* A, const float* B, float* C)
+{
+  float CValue = 0;
+  int Row = blockIdx.y*BLOCK_SIZE + threadIdx.y;
+  int Col = blockIdx.x*BLOCK_SIZE + threadIdx.x;
+  for (int k = 0; k < (BLOCK_SIZE + ACols - 1)/BLOCK_SIZE; k++) {
+    for (int n = 0; n < BLOCK_SIZE; ++n)
+      if ((k*BLOCK_SIZE + n < ACols && Row < ARows) && (k*BLOCK_SIZE + n < BRows && Col < BCols))
+        CValue += A[Row*ACols + k*BLOCK_SIZE + n] * B[(k*BLOCK_SIZE + n)*BCols + Col];
+  }
+  if (Row < CRows && Col < CCols)
+    C[(blockIdx.y * blockDim.y + threadIdx.y)*CCols+blockIdx.x*blockDim.x+threadIdx.x]= CValue;
 }
