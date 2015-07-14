@@ -3,3 +3,6 @@
 
 # temporary build trees
 tmpb/
+
+# logs
+*.log

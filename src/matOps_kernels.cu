@@ -1,6 +1,7 @@
 #define BLOCK_SIZE 32
 
-__global__ void matAdd_kernel(int m, int n, const float* A, const float* B, float* C)
+__global__ void matAdd_kernel(int m, int n, const float* __restrict__ A, 
+                              const float* __restrict__ B, float* __restrict__ C)
 {
 	int x= blockIdx.x*blockDim.x + threadIdx.x;
 	int y= blockIdx.y*blockDim.y + threadIdx.y;

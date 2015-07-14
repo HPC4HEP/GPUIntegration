@@ -3,6 +3,10 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 PROJECT(GPUIntegration)
 
 FIND_PACKAGE(CUDA REQUIRED)
+INCLUDE_DIRECTORIES(
+	include
+	../hemi
+)
 
 LIST(APPEND CMAKE_CXX_FLAGS "-std=c++11 -O3")
 LIST(APPEND CUDA_NVCC_FLAGS
@@ -13,8 +17,10 @@ CUDA_ADD_EXECUTABLE(cudaMatOpsBasic src/cudaMatOps_basic.cu)
 CUDA_ADD_EXECUTABLE(cudaMatOpsConcurrent src/cudaMatOps_concurrent.cu)
 
 ############ HEMI ############
-#INCLUDE_DIRECTORIES(../hemi)
-#CUDA_ADD_EXECUTABLE(cudaMatOpsHEMI src/cudaMatOps_hemi.cu)
+CUDA_ADD_EXECUTABLE(cudaMatOpsHEMI src/cudaMatOps_hemi.cu)
 
 ############ UMA ############
 CUDA_ADD_EXECUTABLE(cudaMatOpsUMA src/cudaMatOps_uma.cu)
+
+############ Portable + UMA ############
+CUDA_ADD_EXECUTABLE(cudaMatOpsPUMA src/cudaMatOps_PortableUma.cu)

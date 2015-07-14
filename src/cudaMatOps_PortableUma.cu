@@ -1,11 +1,11 @@
-/// UMA version
+/// P(-ortable)UMA version
 #include <cstdio>
 #include <thread>
 #include <future>
 #include "utility.h"
 #include "matOps_kernels.cu"
 
-
+#include "GPUIntegration/portable.h"
 
 int main()
 {
@@ -26,9 +26,9 @@ int main()
 		/*cudaStreamAttachMemAsync(cudaStreamPerThread, &A);
 		cudaStreamAttachMemAsync(cudaStreamPerThread, &B);
 		cudaStreamAttachMemAsync(cudaStreamPerThread, &C);*/
-		dim3 grid((n-1)/BLOCK_SIZE+1, (m-1)/BLOCK_SIZE+1);
-		dim3 block(BLOCK_SIZE, BLOCK_SIZE);
-		matAdd_kernel<<<grid,block>>>(m, n, A, B, C);
+		
+		portable::launch(matAdd_kernel, m,n, const_cast<const float*>(A),
+		                 const_cast<const float*>(B),C);
 		//(m==n)? matMul_kernel<<<grid,block>>>(m,m,m, dA, dB, dC): exit(1);
 		cudaStreamSynchronize(cudaStreamPerThread);
 	});
@@ -42,7 +42,7 @@ int main()
 	printf("\nB:\n");
 	show(B, m,n);
 
-	// Wait for kernel to complete TO REUSE same data
+	// Wait for kernel to complete and show result
   futureKernel.get();
 	printf("\nC:\n");
 	show(C, m,n);
