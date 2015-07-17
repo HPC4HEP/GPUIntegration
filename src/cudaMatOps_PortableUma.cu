@@ -2,10 +2,10 @@
 #include <cstdio>
 #include <thread>
 #include <future>
-#include "utility.h"
+#include "GPUIntegration/utility.h"
 #include "matOps_kernels.cu"
 
-#include "GPUIntegration/portable.h"
+#include "GPUIntegration/portability_layer/portable.h"
 
 int main()
 {
@@ -16,9 +16,9 @@ int main()
 	// Simple testcase
 	m= 10; n= m;
 	//A= new float[m*n], B= new float[m*n], C= new float[m*n];
-	cudaMallocManaged(&A, m*n);
-	cudaMallocManaged(&B, m*n);
-	cudaMallocManaged(&C, m*n);
+	cudaMallocManaged(&A, m*n*sizeof(float));
+	cudaMallocManaged(&B, m*n*sizeof(float));
+	cudaMallocManaged(&C, m*n*sizeof(float));
 	init(A, B, m*n);
 
 
@@ -36,6 +36,9 @@ int main()
   std::thread(std::move(task)).detach();
 
 
+  //##### BUG #####
+  //Accessing A and B might cause "Bus error"
+  //But, due to race conditions, this example will probably run fine
 	//Output
 	printf("A:\n");
 	show(A, m,n);

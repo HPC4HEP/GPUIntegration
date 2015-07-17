@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <thread>
 #include <future>
-#include "utility.h"
+#include "GPUIntegration/utility.h"
 #include "matOps_kernels.cu"
 
 #include "hemi/array.h"

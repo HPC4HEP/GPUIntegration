@@ -12,6 +12,19 @@ __global__ void matAdd_kernel(int m, int n, const float* __restrict__ A,
 		C[y*n+x]= A[y*n+x]+B[y*n+x];
 }
 
+__global__ void longrunning_kernel(long n, long times, 
+                                   const double* in, double* out)
+{
+  int x= blockIdx.x*blockDim.x + threadIdx.x;
+
+  if (x < n){
+    out[x]= 0;
+    for(int i=0; i<times; i++){
+      out[x]+= in[x];
+    }
+  }
+}
+
 #define CRows ARows
 #define CCols BCols
 #define BRows ACols
