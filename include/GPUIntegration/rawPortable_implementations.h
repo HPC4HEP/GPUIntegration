@@ -2,6 +2,6 @@
 
 //To be templated
 
-inline void allocate(double*& p, int elemN);
-inline void execute(const int n, const int times, const double* in, double* out);
-inline void memfree(double* p);
+void allocate(double*& p, int elemN);
+void execute(const int n, const int times, const double* in, double* out);
+void memfree(double* p);
