@@ -1,3 +1,5 @@
+#include <cstdio>
+
 void allocate(double*& p, int elemN)
 {
 	p= new double[elemN];
