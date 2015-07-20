@@ -16,6 +16,7 @@ list(APPEND CUDA_NVCC_FLAGS "--default-stream per-thread -gencode arch=compute_3
 
 ################################################################################
 if(CUDA_FOUND)
+
 	CUDA_ADD_EXECUTABLE(cudaMatOpsBasic src/cudaMatOps_basic.cu)
 	CUDA_ADD_EXECUTABLE(cudaMatOpsConcurrent src/cudaMatOps_concurrent.cu)
 
@@ -30,9 +31,13 @@ if(CUDA_FOUND)
 
 ############ Streams Concurrency Exp ############
 	CUDA_ADD_EXECUTABLE(streamConcurrency src/stream_ops_concurrent.cu)
+
+############ Runtime portability ############
+	CUDA_ADD_EXECUTABLE(runtimePortable src/cuda_runtimePortable+uma.cu)
+
 endif(CUDA_FOUND)
 
-############ Raw portability experiment ############
+############ Configure-time portability ############
 if(CUDA_FOUND)
 	message(Using\ GPU)
 	CUDA_ADD_LIBRARY(cudaMatOpsRawPUMA_lib
@@ -44,8 +49,5 @@ else(CUDA_FOUND)
 							src/implementations/rawPortable_implementations.cpp)
 endif(CUDA_FOUND)
 
-message(almost\ done!)
 add_executable(cudaMatOpsRawPUMA src/cudaMatOps_rawPortable+uma.cpp)
 target_link_libraries(cudaMatOpsRawPUMA cudaMatOpsRawPUMA_lib)
-
-message(Done!!!)
