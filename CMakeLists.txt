@@ -35,6 +35,7 @@ if(CUDA_FOUND)
 ############ Runtime portability ############
 	CUDA_ADD_EXECUTABLE(runtimePortable src/cuda_runtimePortable+uma.cu)
 	CUDA_ADD_EXECUTABLE(runtimePortableDynamicPol src/cuda_runtimePortable_dynamicPol.cu)
+	CUDA_ADD_EXECUTABLE(service src/service_example.cu)
 
 endif(CUDA_FOUND)
 
