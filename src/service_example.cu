@@ -13,11 +13,7 @@ class TaskService{
 		typedef std::unique_ptr<VoidTask>  VoidTaskUniqPtr;
 	public:
 		void set_task(int ID, std::function<void()>&& f){
-			printf("Progress Check#%d\n",2);
 			tasks[ID]= std::move(VoidTaskUniqPtr(new VoidTask(std::move(f))));
-			/*tasks.insert(std::pair<int, VoidTaskUniqPtr>(ID,
-			             std::move( VoidTaskUniqPtr(new VoidTask(std::move(f))) )));*/
-			printf("Progress Check#%d\n",3);
 		}
 		std::future<void> launch(int ID){
 			std::future<void> future= tasks.at(ID)->get_future();
@@ -50,32 +46,33 @@ class CPU: public Implementation{
 
 int main()
 {
-  TaskService *taskService;
+  TaskService taskService;
   Implementation *impl;
 	/**Checking presence of GPU**/
-  int deviceCount = 0;
+  /*int deviceCount= 0;
   cudaError_t error_id = cudaGetDeviceCount(&deviceCount);
-  if (error_id == cudaErrorNoDevice || deviceCount == 0) impl= new CPU;
-  else impl= new GPU;
+  if(error_id == cudaSuccess && deviceCount > 0) impl= new GPU;
+  else impl= new CPU;
+  /*if (error_id == cudaErrorNoDevice || deviceCount == 0) impl= new CPU;
+  else impl= new GPU;*/
+  impl= new CPU;
 
-  printf("Progress Check#%d\n",1);
 	double *in, *out;
 	long n;
 	n= 20;
-	// set_task<>(int ID, Function f)
-	taskService->set_task(0, [&] {
+	taskService.set_task(0, [&] {
 		impl->allocate(in, n);
 		impl->allocate(out, n);
 	});
-  taskService->launch(0).get();
+  taskService.launch(0).get();
   
 	for(long i=0; i<n; i++) in[i]= 10*sin(PI/100*i);
 	for(long i=0; i<n; i++) out[i]= 1;
 
-	taskService->set_task(1, [&] {
+	taskService.set_task(1, [&] {
 		impl->execute(n, 100, in, out);
 	});
-  std::future<void> future1= taskService->launch(1);
+  std::future<void> future1= taskService.launch(1);
 
 	future1.get();
 	printf("IN:\n");
@@ -86,11 +83,11 @@ int main()
 		printf("%.0f\t", out[i]);
 	printf("\nDONE\n");
 
-	taskService->set_task(2, [&] {
+	taskService.set_task(2, [&] {
 		impl->memfree(in);
 		impl->memfree(out);
 	});
-	taskService->launch(2).get();
+	taskService.launch(2).get();
 	return 0;
 }
 
