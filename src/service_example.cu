@@ -9,20 +9,40 @@
 #include "matOps_kernels.cu"
 
 class TaskService{
-		typedef std::packaged_task<void()> VoidTask;
-		typedef std::unique_ptr<VoidTask>  VoidTaskUniqPtr;
+		class TaskInterface{
+			public:
+				virtual ~TaskInterface() {};
+				virtual std::future<void> launch() =0;
+		};
+		template<typename Fn>
+		class TaskWrapper: public TaskInterface{
+				std::packaged_task<Fn> task_;
+				std::thread thread_;
+			public:
+				TaskWrapper(std::function<Fn>&& f):
+										task_(std::forward< std::function<Fn> >(f)) {};
+
+				virtual std::future<void> launch(){
+					std::future<void> future= task_.get_future();
+					thread_= std::thread(std::move(task_));
+					thread_.detach();
+					return future;
+				}
+		};
+		typedef std::unique_ptr<TaskInterface> TaskInterfacePtr;
+
 	public:
-		void set_task(int ID, std::function<void()>&& f){
-			tasks[ID]= std::move(VoidTaskUniqPtr(new VoidTask(std::move(f))));
+		template<typename Fn>
+		void set_task(int ID, std::function<Fn>&& f){
+			tasks_[ID]= std::move(TaskInterfacePtr(
+			          		new TaskWrapper<Fn>(std::forward< std::function<Fn> >(f)) ));
 		}
 		std::future<void> launch(int ID){
-			std::future<void> future= tasks.at(ID)->get_future();
-			std::thread(std::move(*tasks.at(ID))).detach();
-			tasks.erase(ID);
-			return future;
+			return tasks_.at(ID)->launch();
 		}
+
 	private:
-		std::map<int, VoidTaskUniqPtr> tasks;
+		std::map<int, TaskInterfacePtr> tasks_;
 };
 
 class Implementation{
@@ -60,7 +80,7 @@ int main()
 	double *in, *out;
 	long n;
 	n= 20;
-	taskService.set_task(0, [&] {
+	taskService.set_task<void()>(0, [&] {
 		impl->allocate(in, n);
 		impl->allocate(out, n);
 	});
@@ -69,7 +89,7 @@ int main()
 	for(long i=0; i<n; i++) in[i]= 10*sin(PI/100*i);
 	for(long i=0; i<n; i++) out[i]= 1;
 
-	taskService.set_task(1, [&] {
+	taskService.set_task<void()>(1, [&] {
 		impl->execute(n, 100, in, out);
 	});
   std::future<void> future1= taskService.launch(1);
@@ -83,7 +103,7 @@ int main()
 		printf("%.0f\t", out[i]);
 	printf("\nDONE\n");
 
-	taskService.set_task(2, [&] {
+	taskService.set_task<void()>(2, [&] {
 		impl->memfree(in);
 		impl->memfree(out);
 	});
