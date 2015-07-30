@@ -1,50 +1,8 @@
 #include <cstdio>
-#include <thread>
 #include <future>
-#include <functional>
-#include <memory>
-#include <map>
 #include "GPUIntegration/utility.h"
 #include "matOps_kernels.cu"
-
-
-class TaskService{
-		class TaskInterface{
-			public:
-				virtual ~TaskInterface() {};
-				virtual std::future<void> launch() =0;
-		};
-		template<typename Fn> class TaskWrapper;
-		template<typename R, typename... Args>
-		class TaskWrapper<R(Args...)>: public TaskInterface{
-				std::packaged_task<R(Args...)> task_;
-				std::thread thread_;
-			public:
-				TaskWrapper(std::function<R(Args...)>&& f):
-										task_(std::forward< std::function<R(Args...)> >(f)) {};
-				std::future<void> launch(Args&&... args){
-					std::future<void> future= task_.get_future();
-					thread_= std::thread(std::move(task_), std::forward<Args>(args)...);
-					thread_.detach();
-					return future;
-				}
-		};
-		typedef std::unique_ptr<TaskInterface> TaskInterfacePtr;
-
-	public:
-		template<typename Fn>
-		void set_task(int ID, std::function<Fn>&& f){
-			tasks_[ID]= std::move(TaskInterfacePtr(
-			          		new TaskWrapper<Fn>(std::forward< std::function<Fn> >(f)) ));
-		}
-		template<typename... Args>
-		std::future<void> launch(int ID, Args&&... args){
-			return tasks_.at(ID)->launch(std::forward<Args>(args)...);
-		}
-
-	private:
-		std::map<int, TaskInterfacePtr> tasks_;
-};
+#include "implementations/taskService_stat.cpp"
 
 class Implementation{
 	public:
@@ -67,7 +25,7 @@ class CPU: public Implementation{
 
 int main()
 {
-  TaskService taskService;
+  TaskServiceStat taskService;
   Implementation *impl;
 	/**Checking presence of GPU**/
   int deviceCount= 0;
@@ -85,7 +43,7 @@ int main()
 		impl->allocate(in, n);
 		impl->allocate(out, n);
 	});
-  taskService.launch(0).get();
+  taskService.launch<void()>(0).get();
   
 	for(long i=0; i<n; i++) in[i]= 10*sin(PI/100*i);
 	for(long i=0; i<n; i++) out[i]= 1;
@@ -93,7 +51,7 @@ int main()
 	taskService.set_task<void()>(1, [&] {
 		impl->execute(n, 100, in, out);
 	});
-  std::future<void> future1= taskService.launch(1);
+  std::future<void> future1= taskService.launch<void()>(1);
 
 	future1.get();
 	printf("IN:\n");
@@ -108,7 +66,7 @@ int main()
 		impl->memfree(in);
 		impl->memfree(out);
 	});
-	taskService.launch(2).get();
+	taskService.launch<void()>(2).get();
 	return 0;
 }
 

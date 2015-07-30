@@ -35,7 +35,13 @@ if(CUDA_FOUND)
 ############ Runtime portability ############
 	CUDA_ADD_EXECUTABLE(runtimePortable src/cuda_runtimePortable+uma.cu)
 	CUDA_ADD_EXECUTABLE(runtimePortableDynamicPol src/cuda_runtimePortable_dynamicPol.cu)
-	CUDA_ADD_EXECUTABLE(service src/service_example.cu)
+
+############ Service ############
+	#CUDA_ADD_EXECUTABLE(serviceStatic src/service_staticPolym.cu)
+	add_executable(testService src/service_test.cpp)
+	set_target_properties(testService
+                        PROPERTIES COMPILE_FLAGS "-std=c++14 -O3 -pthread")
+
 
 endif(CUDA_FOUND)
 
