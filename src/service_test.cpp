@@ -3,6 +3,7 @@
 #include <future>
 #include <chrono>
 #include "implementations/taskService_stat.cpp"
+#include "GPUIntegration/thread_pool.h"
 using namespace std;
 
 template<class Fn, class... Args>
@@ -31,6 +32,22 @@ int main(int argc, char** argv)
 	long dummy= 1;
 
 	ofstream f("dump");
+	ThreadPool pool(std::thread::hardware_concurrency());
+	diff= start-start;
+	for (int i = 0; i <= N; ++i)
+	{
+		//dummy= 0;
+		start = chrono::steady_clock::now();
+	  fut= pool.enqueue([&f] (long dummyArg){
+			dummyArg= 2;
+			f << 1;
+	  }, dummy);
+		end = chrono::steady_clock::now();
+		fut.get();
+		diff += (i>0)? end-start: start-start;
+	}
+	cout << "ThreadPool: "<< chrono::duration <double, nano> (diff).count()/N << " ns" << endl;
+
 	diff= start-start;
 	for (int i = 0; i <= N; ++i)
 	{
@@ -45,7 +62,7 @@ int main(int argc, char** argv)
 		fut.get();
 		diff += (i>0)? end-start: start-start;
 	}
-	cout << dummy << endl;
+	//cout << dummy << endl;
 	cout << "Static: "<< chrono::duration <double, nano> (diff).count()/N << " ns" << endl;
 	f.close();
 	return 0;

@@ -42,8 +42,10 @@ if(CUDA_FOUND)
 	set_target_properties(testService
                         PROPERTIES COMPILE_FLAGS "-std=c++14 -O3 -pthread")
 
-
 endif(CUDA_FOUND)
+
+############ Thread Pool ############
+	add_executable(threadPool src/threadPool_example.cpp)
 
 ############ Configure-time portability ############
 if(CUDA_FOUND)
