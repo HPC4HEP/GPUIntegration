@@ -41,7 +41,9 @@ if(CUDA_FOUND)
 	add_executable(timeTaskLaunch test/task_service/time_task_launch.cpp)
 		set_target_properties(timeTaskLaunch
                         PROPERTIES COMPILE_FLAGS "-std=c++14 -O3 -pthread")
-  add_executable(threadPool test/task_service/threadPool_example.cpp)
+  add_executable(threadPoolExample test/task_service/threadPool_example.cpp)
+  add_executable(TEST_threadPoolSimple test/task_service/test_threadPool_simple.cpp)
+  CUDA_ADD_EXECUTABLE(TEST_threadPoolCUDA test/task_service/test_threadPool_CUDAtask.cu)
 
 endif(CUDA_FOUND)
 

@@ -24,6 +24,18 @@ __global__ void longrunning_kernel(long n, long times,
     }
   }
 }
+__global__ void longrunning_FL(int n, int times, 
+                                   const float* in, float* out)
+{
+  int x= blockIdx.x*blockDim.x + threadIdx.x;
+
+  if (x < n){
+    out[x]= 0;
+    for(int i=0; i<times; i++){
+      out[x]+= in[x];
+    }
+  }
+}
 
 #define CRows ARows
 #define CCols BCols

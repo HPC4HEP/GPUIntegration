@@ -34,7 +34,7 @@ int main(int argc, char** argv)
 	long dummy= 1;
 
 	ofstream f("dump");
-	ThreadPool pool(std::thread::hardware_concurrency());
+	ThreadPoolService pool(std::thread::hardware_concurrency());
 	/*diff= start-start;
 	for (int i = 0; i <= N; ++i)
 	{
@@ -48,7 +48,7 @@ int main(int argc, char** argv)
 		fut.get();
 		diff += (i>0)? end-start: start-start;
 	}
-	cout << "ThreadPool: "<< chrono::duration <double, nano> (diff).count()/N << " ns" << endl;*/
+	cout << "ThreadPoolService: "<< chrono::duration <double, nano> (diff).count()/N << " ns" << endl;*/
 
 	vector<future<void>> futVec;
 	diff= start-start;
@@ -60,7 +60,7 @@ int main(int argc, char** argv)
 		end = chrono::steady_clock::now();
 		diff += (i>0)? end-start: start-start;
 	}
-	cout << "Vec ThreadPool: "<< chrono::duration <double, nano> (diff).count()/N << " ns" << endl;
+	cout << "Vec ThreadPoolService: "<< chrono::duration <double, nano> (diff).count()/N << " ns" << endl;
 	for_each(futVec.begin(), futVec.end(), [] (auto&& elt) {
 		elt.get();
 	});

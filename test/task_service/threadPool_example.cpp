@@ -15,7 +15,7 @@ int main()
 
 int test2(){
   std::cout<<"\n";
-  ThreadPool pool(std::thread::hardware_concurrency());
+  ThreadPoolService pool(std::thread::hardware_concurrency());
   std::future<void> result= pool.enqueue([&] (){
     std::cout<< "Hello task!\n";
   });
@@ -24,7 +24,7 @@ int test2(){
 }
 int test1(){
   std::cout<<"\n";
-  ThreadPool pool(4);
+  ThreadPoolService pool(4);
   std::vector< std::future<int> > results;
 
   int b;

@@ -36,20 +36,20 @@ Editor: Konstantinos Samaras-Tsakiris, kisamara@auth.gr
 /*
 //CMSSW Integration
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
-// Application state transitions?
-//#include "FWCore/ServiceRegistry/interface/ActivityRegistry.h"
-#include "DataFormats/Provenance/interface/EventID.h"
-#include "FWCore/Services/src/ProcInfoFetcher.h"
+#include "FWCore/ServiceRegistry/interface/ActivityRegistry.h"
+#include "FWCore/MessageLogger/interface/MessageLogger.h"
+#include "FWCore/ServiceRegistry/interface/ServiceMaker.h"
 */
 
 namespace edm{
 namespace service{
 
 // std::thread pool for resources recycling
-class ThreadPool {
+class ThreadPoolService {
 public:
-  // the constructor just launches some amount of workers_
-	ThreadPool(size_t threads_n = std::thread::hardware_concurrency()) : stop_(false)
+  // the constructor just launches some amount of workers
+  //ThreadPoolService(const edm::ParameterSet&, edm::ActivityRegistry&)
+	ThreadPoolService(size_t threads_n = std::thread::hardware_concurrency()) : stop_(false)
 	{
 		if(!threads_n)
 			throw std::invalid_argument("more than zero threads expected");
@@ -76,10 +76,10 @@ public:
       });
 	}
   // deleted copy&move ctors&assignments
-	ThreadPool(const ThreadPool&) = delete;
-	ThreadPool& operator=(const ThreadPool&) = delete;
-	ThreadPool(ThreadPool&&) = delete;
-	ThreadPool& operator=(ThreadPool&&) = delete;
+	ThreadPoolService(const ThreadPoolService&) = delete;
+	ThreadPoolService& operator=(const ThreadPoolService&) = delete;
+	ThreadPoolService(ThreadPoolService&&) = delete;
+	ThreadPoolService& operator=(ThreadPoolService&&) = delete;
 
   // add new work item to the pool
   template<class F, class... Args>
@@ -100,7 +100,7 @@ public:
 	}
 
   // the destructor joins all threads
-	virtual ~ThreadPool()
+	virtual ~ThreadPoolService()
 	{
 		this->stop_ = true;
 		this->condition_.notify_all();
@@ -122,4 +122,6 @@ private:
 
 }	// namespace service
 }	// namespace edm
+
+//DEFINE_FWK_SERVICE(ZombieKillerService);
 #endif FWCore_Services_TaskService_h
