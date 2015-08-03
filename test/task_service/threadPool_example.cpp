@@ -1,7 +1,9 @@
 #include <iostream>
 #include <vector>
 #include <chrono>
-#include "GPUIntegration/thread_pool.h"
+#include "GPUIntegration/task_service/thread_pool.h"
+
+using namespace edm::service;
 
 int test1();
 int test2();

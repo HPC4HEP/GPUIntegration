@@ -2,9 +2,11 @@
 #include <fstream>
 #include <future>
 #include <chrono>
-#include "implementations/taskService_stat.cpp"
-#include "GPUIntegration/thread_pool.h"
+#include <algorithm>
+#include "../src/implementations/taskService_stat.cpp"
+#include "GPUIntegration/task_service/thread_pool.h"
 using namespace std;
+using namespace edm::service;
 
 template<class Fn, class... Args>
 decltype(auto) launch1(Fn&& f, Args&&... args){
@@ -22,8 +24,8 @@ int main(int argc, char** argv)
 	statServ.launch<void(int*)>(0, n).get();
 	return 0;*/
 
-	long N= 100000;
-	N= stol(argv[1]);
+	long N= 10000;
+	if (argc>1) N= stol(argv[1]);
 	auto start= chrono::steady_clock::now();
 	auto end = start;
 	auto diff= start-start;
@@ -33,7 +35,7 @@ int main(int argc, char** argv)
 
 	ofstream f("dump");
 	ThreadPool pool(std::thread::hardware_concurrency());
-	diff= start-start;
+	/*diff= start-start;
 	for (int i = 0; i <= N; ++i)
 	{
 		//dummy= 0;
@@ -46,8 +48,24 @@ int main(int argc, char** argv)
 		fut.get();
 		diff += (i>0)? end-start: start-start;
 	}
-	cout << "ThreadPool: "<< chrono::duration <double, nano> (diff).count()/N << " ns" << endl;
+	cout << "ThreadPool: "<< chrono::duration <double, nano> (diff).count()/N << " ns" << endl;*/
 
+	vector<future<void>> futVec;
+	diff= start-start;
+	for (int i = 0; i <= N; ++i)
+	{
+		start = chrono::steady_clock::now();
+	  futVec.push_back(pool.enqueue([&f] (){
+	  }));
+		end = chrono::steady_clock::now();
+		diff += (i>0)? end-start: start-start;
+	}
+	cout << "Vec ThreadPool: "<< chrono::duration <double, nano> (diff).count()/N << " ns" << endl;
+	for_each(futVec.begin(), futVec.end(), [] (auto&& elt) {
+		elt.get();
+	});
+
+/*
 	diff= start-start;
 	for (int i = 0; i <= N; ++i)
 	{
@@ -64,6 +82,7 @@ int main(int argc, char** argv)
 	}
 	//cout << dummy << endl;
 	cout << "Static: "<< chrono::duration <double, nano> (diff).count()/N << " ns" << endl;
+*/
 	f.close();
 	return 0;
 }

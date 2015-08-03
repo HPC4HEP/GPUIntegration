@@ -38,14 +38,13 @@ if(CUDA_FOUND)
 
 ############ Service ############
 	#CUDA_ADD_EXECUTABLE(serviceStatic src/service_staticPolym.cu)
-	add_executable(testService src/service_test.cpp)
-	set_target_properties(testService
+	add_executable(timeTaskLaunch test/task_service/time_task_launch.cpp)
+		set_target_properties(timeTaskLaunch
                         PROPERTIES COMPILE_FLAGS "-std=c++14 -O3 -pthread")
+  add_executable(threadPool test/task_service/threadPool_example.cpp)
 
 endif(CUDA_FOUND)
 
-############ Thread Pool ############
-	add_executable(threadPool src/threadPool_example.cpp)
 
 ############ Configure-time portability ############
 if(CUDA_FOUND)

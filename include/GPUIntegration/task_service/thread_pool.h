@@ -1,4 +1,4 @@
-/*
+/**
 Copyright (c) 2012 Jakob Progsch, Václav Zeman
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -14,54 +14,65 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
    3. This notice may not be removed or altered from any source
    distribution.
+
+--> This is an altered version of the original code.
+Editor: Konstantinos Samaras-Tsakiris, kisamara@auth.gr
 */
 
-#ifndef THREAD_POOL_H
-#define THREAD_POOL_H
+#ifndef FWCore_Services_TaskService_h
+#define FWCore_Services_TaskService_h
 
-// containers
 #include <vector>
 #include <queue>
-// threading
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
 #include <future>
-// utility wrappers
 #include <memory>
 #include <functional>
-// exceptions
 #include <stdexcept>
+
+/*
+//CMSSW Integration
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
+// Application state transitions?
+//#include "FWCore/ServiceRegistry/interface/ActivityRegistry.h"
+#include "DataFormats/Provenance/interface/EventID.h"
+#include "FWCore/Services/src/ProcInfoFetcher.h"
+*/
+
+namespace edm{
+namespace service{
 
 // std::thread pool for resources recycling
 class ThreadPool {
 public:
-  // the constructor just launches some amount of workers
-	ThreadPool(size_t threads_n = std::thread::hardware_concurrency()) : stop(false)
+  // the constructor just launches some amount of workers_
+	ThreadPool(size_t threads_n = std::thread::hardware_concurrency()) : stop_(false)
 	{
 		if(!threads_n)
 			throw std::invalid_argument("more than zero threads expected");
 
-		this->workers.reserve(threads_n);
+		this->workers_.reserve(threads_n);
 		for(; threads_n; --threads_n)
-			this->workers.emplace_back([this] {
+			this->workers_.emplace_back([this] (){
 	     	while(true)
 	     	{
 	     		std::function<void()> task;
 
 	     		{
-	     			std::unique_lock<std::mutex> lock(this->queue_mutex);
-	     			this->condition.wait(lock,
-	     			                     [this]{ return this->stop || !this->tasks.empty(); });
-	     			if(this->stop && this->tasks.empty())
+	     			std::unique_lock<std::mutex> lock(this->queue_mutex_);
+	     			this->condition_.wait(lock,
+	     			                     [this]{ return this->stop_ || !this->tasks_.empty(); });
+	     			if(this->stop_ && this->tasks_.empty())
 	     				return;
-	     			task = std::move(this->tasks.front());
-	     			this->tasks.pop();
+	     			task = std::move(this->tasks_.front());
+	     			this->tasks_.pop();
 	     		}
 
 	     		task();
-	     	}
+	     }
       });
 	}
   // deleted copy&move ctors&assignments
@@ -79,34 +90,36 @@ public:
 		std::shared_ptr<packaged_task_t> task(new packaged_task_t(
                       std::bind(std::forward<F>(f), std::forward<Args>(args)...)
     ));
-		auto res = task->get_future();
+		auto resultFut = task->get_future();
 		{
-			std::unique_lock<std::mutex> lock(this->queue_mutex);
-			this->tasks.emplace([task](){ (*task)(); });
+			std::unique_lock<std::mutex> lock(this->queue_mutex_);
+			this->tasks_.emplace([task](){ (*task)(); });
 		}
-		this->condition.notify_one();
-		return res;
+		this->condition_.notify_one();
+		return resultFut;
 	}
 
   // the destructor joins all threads
 	virtual ~ThreadPool()
 	{
-		this->stop = true;
-		this->condition.notify_all();
-		for(std::thread& worker : this->workers)
+		this->stop_ = true;
+		this->condition_.notify_all();
+		for(std::thread& worker : this->workers_)
 			worker.join();
 	}
 private:
   // need to keep track of threads so we can join them
-	std::vector< std::thread > workers;
+	std::vector< std::thread > workers_;
   // the task queue
-	std::queue< std::function<void()> > tasks;
+	std::queue< std::function<void()> > tasks_;
 
   // synchronization
-	std::mutex queue_mutex;
-	std::condition_variable condition;
-  // workers finalization flag
-	std::atomic_bool stop;
+	std::mutex queue_mutex_;
+	std::condition_variable condition_;
+  // workers_ finalization flag
+	std::atomic_bool stop_;
 };
 
-#endif // THREAD_POOL_H
+}	// namespace service
+}	// namespace edm
+#endif FWCore_Services_TaskService_h
